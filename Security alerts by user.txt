@@ -1,0 +1,19 @@
+let T = SecurityIncident
+| where TimeGenerated > ago(2d)
+| summarize arg_max(TimeGenerated, *) by IncidentNumber
+| mv-expand AlertIds
+| extend AlertId = tostring(AlertIds)
+| join kind=innerunique (
+SecurityAlert
+| summarize arg_max(TimeGenerated, *) by SystemAlertId) on $left.AlertId==$right.SystemAlertId
+| mv-expand Entity = todynamic(Entities)
+| extend Account_Entity = tostring(Entity.Name)
+| extend IP_Entity = tostring(Entity.Address)
+| extend HostName_Entity = tostring(Entity.HostName)
+| search "jbudish@aherninsurance.com";
+//| where Account_Entity == ""
+//| where IP_Entity == ""
+//| where HostName_Entity == ""
+//| Comment out appropriate lines for searching entity
+T
+| summarize arg_max(TimeGenerated, *) by IncidentNumber
